@@ -1,3 +1,13 @@
+// จารบอกว่าให้เขียน libary ของ distance sensor
+// แต่ distance sensor ไม่ได้ใช้ libary (ใช้ pulseIn function พื้นฐานของ arduino จากบรรทัด 140)
+// https://forum.arduino.cc/t/pulsein-function-source-code/102995 --> code pulseIn ลองไปดุู
+// https://github.com/arduino/ArduinoCore-avr/blob/master/cores/arduino/wiring_pulse.c
+// https://forum.arduino.cc/t/pulsein-function-source-code/102995
+// เขียน comment ด้วยตอนทำ
+//
+//
+//
+
 #include <Wire.h>  //i2c communication SDA SCL
 #include <Adafruit_BMP280.h>
 #include <AHT10.h>
@@ -54,6 +64,8 @@ void loop() {
   server.handleClient();
   distance_output();
   AHT20_BMP280_output();
+
+  //เอาไว้ทดสอบเฉยๆ เวลาใช้จริงต้องเช็ตระยะและอุณหภูมิด้วย
   if (distanceCm <= 10) {
     Serial.println("Go 180");
     myservo.write(180);
@@ -61,7 +73,7 @@ void loop() {
     count++;
     EEPROM.put(address, count);
     EEPROM.commit();
-    delay(5000);
+    delay(3000);
   } else {
     myservo.write(0);
   }
