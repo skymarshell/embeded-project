@@ -5,8 +5,8 @@
 // https://forum.arduino.cc/t/pulsein-function-source-code/102995
 // เขียน comment ด้วยตอนทำ
 //
-//
-//
+// บรรทัด 135 138 ทำไมต้อง   delayMicroseconds;
+// 32 ทำไมต้อง const float SOUND_SPEED = 0.034; ใช้คู่กับ บรรทัด 145
 
 #include <Wire.h>  //i2c communication SDA SCL
 #include <Adafruit_BMP280.h>
@@ -43,7 +43,7 @@ float pressure;     //ความกดอากาศ
 
 int address = 0;
 int count;
- 
+
 AHT10 myAHT20;  // Create an instance of the AHT10 sensor
 Adafruit_BMP280 bmp;
 
