@@ -7,7 +7,6 @@
 //
 // บรรทัด 135 138 ทำไมต้อง   delayMicroseconds;
 // 32 ทำไมต้อง const float SOUND_SPEED = 0.034; ใช้คู่กับ บรรทัด 145
-
 #include <Wire.h>  //i2c communication SDA SCL
 #include <Adafruit_BMP280.h>
 #include <AHT10.h>
@@ -16,17 +15,17 @@
 #include <EEPROM.h>
 #include <WebServer.h>
 
-//wifi setup
-const char* ssid = "Coffee";
-const char* password = "12345678";
+// wifi setup
+const char *ssid = "Coffee";
+const char *password = "12345678";
 IPAddress local_ip(192, 168, 1, 2);
 IPAddress gateway(192, 168, 1, 1);
 IPAddress subnet(255, 255, 255, 0);
 WebServer server(80);
-//วัดระยะทาง
+// วัดระยะทาง
 const int trigPin = 5;
 const int echoPin = 18;
-//servo
+// servo
 const int servoPin = 23;
 
 const float SOUND_SPEED = 0.034;
@@ -36,10 +35,9 @@ long duration;
 float distanceCm;
 float distanceInch;
 
-float temperature;  //อุณหภูมิ
-float humidity;     //ความชื้น
-float pressure;     //ความกดอากาศ
-
+float temperature;  // อุณหภูมิ
+float humidity;     // ความชื้น
+float pressure;     // ความกดอากาศ
 
 int address = 0;
 int count;
@@ -49,6 +47,13 @@ Adafruit_BMP280 bmp;
 
 Servo myservo;
 
+unsigned long openTime = 0;
+const unsigned long finishTime = 3000;  // 3 seconds
+
+unsigned long cTime = 0;
+unsigned long pTime = 0;
+bool checkText = false;
+
 void setup() {
   Serial.begin(115200);
   EEPROM.begin(512);
@@ -56,8 +61,8 @@ void setup() {
   distance_setup();
   AHT20_BMP280_setup();
   myservo.attach(servoPin);
-  //start with 0 degree
-  myservo.write(0);
+  // start with 0 degree
+  myservo.write(360);
 }
 
 void loop() {
@@ -65,23 +70,55 @@ void loop() {
   distance_output();
   AHT20_BMP280_output();
 
-  //เอาไว้ทดสอบเฉยๆ เวลาใช้จริงต้องเช็ตระยะและอุณหภูมิด้วย
+  // มีแก้ววางอยู่ //temperature
   if (distanceCm <= 10) {
-    Serial.println("Go 180");
-    myservo.write(180);
+    myservo.write(270);
     count = EEPROM.read(address);
-    count++;
     EEPROM.put(address, count);
     EEPROM.commit();
-    delay(3000);
-  } else {
-    myservo.write(0);
+    // เริ่มจับเวลาทำงาน
+    if (openTime == 0) {
+      // If the cup is detected within 10 cm, start the timer
+      count++;
+      Serial.println("เปิดฝา");
+      openTime = millis();
+    }
+
+    // debug
+    cTime = millis();
+    if (cTime - pTime >= 1000) {
+      pTime = cTime;
+      Serial.printf("Distance (cm) :  %.2f ,Temperature : %.2f \n", distanceCm, temperature);
+    }
+
+    // ทำงานครบ 3 วิ
+    if (millis() - openTime >= finishTime) {
+
+      Serial.println("จับเวลาครบ 3 วินาที");
+      Serial.println("ปิดฝา");
+      myservo.write(0);
+      openTime = 0;  // Reset the timer
+      delay(3000);
+    }
+  }
+  // กรณีไม่มีแก้ววาง
+  else {
+    // กรณีวางไม่ครบ 3 วิ
+    if (openTime != 0) {
+      checkText = true;
+      // reset
+      openTime = 0;
+    }
+    // ปิด
+    if (openTime == 0 && checkText == true) {
+      Serial.println("ปิดฝา");
+      myservo.write(0);
+      checkText = false;
+    }
   }
 
-
-  delay(1000);
+  delay(100);
 }
-
 
 //--------------------------------functions---------------------------
 // setup และ data ของ อุณหภูมิ ความชื้น ความกดอากาศ
@@ -109,21 +146,20 @@ void AHT20_BMP280_setup() {
                   Adafruit_BMP280::STANDBY_MS_500); /* Standby time. */
 }
 
-
 void AHT20_BMP280_output() {
   // – SDA (Serial Data) คือ สายสัญญาณสำหรับรับ-ส่งข้อมูล
   // – SCL (Serial Clock) คือ สายสัญญาณนาฬิกา ใช้เป็นสำหรับควบคุมการรับ-ส่งข้อมูล
   temperature = myAHT20.readTemperature();
-  Serial.printf("อุณหภูมิ %.2f *C \n", temperature);
+  // Serial.printf("อุณหภูมิ %.2f *C \n", temperature);
 
   humidity = myAHT20.readHumidity();
-  Serial.printf("ความชื้น %.2f RH \n", humidity);
+  // Serial.printf("ความชื้น %.2f RH \n", humidity);
 
   pressure = bmp.readPressure();
-  Serial.printf("ความกดอากาศ %.2f hPa \n\n", pressure);
+  // Serial.printf("ความกดอากาศ %.2f hPa \n\n", pressure);
 }
 
-//set up และ data ตัววัดระยะทาง
+// set up และ data ตัววัดระยะทาง
 void distance_setup() {
   pinMode(trigPin, OUTPUT);  // Sets the trigPin as an Output
   pinMode(echoPin, INPUT);   // Sets the echoPin as an Input
@@ -148,23 +184,23 @@ void distance_output() {
   distanceInch = distanceCm * CM_TO_INCH;
 
   // Prints the distance in the Serial Monitor
-  Serial.print("Distance (cm): ");
-  Serial.println(distanceCm);
-  Serial.print("Distance (inch): ");
-  Serial.println(distanceInch);
+  // Serial.print("Distance (cm): ");
+  // Serial.println(distanceCm);
+  // Serial.print("Distance (inch): ");
+  // Serial.println(distanceInch);
 }
 
-//wifi setup
+// wifi setup
 void wifi_setup() {
-  //connect to WiFi
+  // connect to WiFi
   WiFi.softAP(ssid, password);
   WiFi.softAPConfig(local_ip, gateway, subnet);
   delay(100);
   server.on("/", handle_OnConnect);
 
   server.begin();
-  //server.on("/", handle_OnConnect);
-  //server.onNotFound(handle_NotFound);
+  // server.on("/", handle_OnConnect);
+  // server.onNotFound(handle_NotFound);
 }
 void handle_OnConnect() {
   server.send(200, "text/html", SendHTML());
@@ -185,12 +221,11 @@ String SendHTML() {
   ptr += "</style>\n";
   ptr += "</head>\n";
   ptr += "<body>\n";
-  //body
+  // body
   ptr += "<h1>Coffe count</h1>\n";
   ptr += "<h1>" + String(count) + "</h1>\n";
 
-
-  //end body
+  // end body
   ptr += "</body>\n";
   ptr += "</html>\n";
   return ptr;
