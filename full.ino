@@ -1,13 +1,4 @@
-// จารบอกว่าให้เขียน libary ของ distance sensor
-// แต่ distance sensor ไม่ได้ใช้ libary (ใช้ pulseIn function พื้นฐานของ arduino จากบรรทัด 140)
-// https://forum.arduino.cc/t/pulsein-function-source-code/102995 --> code pulseIn ลองไปดุู
-// https://github.com/arduino/ArduinoCore-avr/blob/master/cores/arduino/wiring_pulse.c
-// https://forum.arduino.cc/t/pulsein-function-source-code/102995
-// เขียน comment ด้วยตอนทำ
-//
-// บรรทัด 135 138 ทำไมต้อง   delayMicroseconds;
-// 32 ทำไมต้อง const float SOUND_SPEED = 0.034; ใช้คู่กับ บรรทัด 145
-#include <Wire.h>  //i2c communication SDA SCL
+#include <Wire.h>  
 #include <Adafruit_BMP280.h>
 #include <AHT10.h>
 #include <ESP32Servo.h>
